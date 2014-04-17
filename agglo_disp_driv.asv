@@ -3,7 +3,7 @@ function [out]= agglo_disp_driv(agglo, plume)
 %                   undergoing agglomeration, dilution and deposition due to
 %                   dispersion. Source is assumed to be at (0,0,0), and air 
 %                   parcel is assumed to follow linear trajectory between 
-%                   initial and final coordinates. Cartesian coordinates are
+%                   initial abd final coordinates. cartesian coordinates are
 %                   aligned so that the x coordinate corresponds to wind
 %                   direction.
 %
@@ -60,14 +60,14 @@ out.dt= dist_tot/(plume.U*plume.N_reso);
 k= 1.3806488e-23;
 
 % time series of output variables:
-out.x_ts= zeros(1,plume.N_reso+1); out.y_ts= zeros(1,plume.N_reso+1); out.z_ts= zeros(1,plume.N_reso+1);  
-out.dist_ts= zeros(1,plume.N_reso+1); out.tc_ts= zeros(1,plume.N_reso+1);
-out.Ntot_ts= zeros(1,plume.N_reso+1); out.phi_ts=zeros(1,plume.N_reso+1); out.va_ts= zeros(1,plume.N_reso+1); out.Np_ts= zeros(1,plume.N_reso+1); 
-out.sigx_ts= zeros(1,plume.N_reso+1); out.sigy_ts= zeros(1,plume.N_reso+1); out.sigz_ts= zeros(1,plume.N_reso+1); 
-out.Kl_ts=zeros(1,plume.N_reso+1); out.depvel_ts= zeros(1,plume.N_reso+1); 
-out.cx_ts= zeros(1,plume.N_reso+1); out.cy_ts= zeros(1,plume.N_reso+1);out.cz_ts= zeros(1,plume.N_reso+1); 
-out.dcx_ts= zeros(1,plume.N_reso+1); out.dcy_ts= zeros(1,plume.N_reso+1);out.dcz_ts= zeros(1,plume.N_reso+1);
-out.Ctest_ts= zeros(1,plume.N_reso+1);  % for testing purposes
+%out.x_ts= []; out.y_ts= []; out.z_ts= []; out.tc_ts= []; out.dist_ts= []; 
+out.Ntot_ts= []; out.phi_ts=[]; out.va_ts= []; out.Np_ts= []; 
+out.sigx_ts= []; out.sigy_ts= []; out.sigz_ts= []; out.Kl_ts=[]; out.depvel_ts= []; 
+out.cx_ts= []; out.cy_ts= [];out.cz_ts= []; out.dcx_ts= []; out.dcy_ts= [];out.dcz_ts= [];
+out.Ctest_ts= []; % for testing purposes
+
+out.x_ts= zeros(1,plume.N_reso+1); out.y_ts= zeros(1,plume.N_reso+1); out.z_ts= zeros(1,plume.N_reso+1);  out.dist_ts= zeros(1,plume.N_reso+1);
+out.Ntot_ts= []; out.phi_ts=[]; out.va_ts= []; out.Np_ts= []; 
 
 % calculate the alfa constant (eq. 4 in Lehtinen et al., JCI, 1996): 
 alfa = 6.548 + 112.1*(agglo.D_f^(-7.883));
@@ -128,27 +128,27 @@ for i= 1: plume.N_reso+1
         dpout.dc_x= 0.0; dpout.dc_y= 0.0; dpout.dc_z= 0.0; dpout.test_conc= 0.0;
     end % endif
        
-    % update volume and number concentration due to dispersion and deposition(Euler method):
+    % update volume and number concentration (Euler method):
     % out.N_tot= out.N_tot + out.N_tot*dpout.K_loss*out.dt;
     % out.phi= out.phi + out.phi*dpout.K_loss*out.dt;
     
-    % update volume and number concentration due to dispersion and deposition(implicit Euler method):
+    % update volume and number concentration (implicit Euler method):
     out.N_tot= out.N_tot/(1.0 - dpout.K_loss*out.dt);
     out.phi= out.phi/(1.0 - dpout.K_loss*out.dt);
    
 % update time series of output variables: 
     out.x_ts(i)= out.x; out.y_ts(i)= out.y;  out.z_ts(i)= out.z;  out.tc_ts(i)= out.tc; out.dist_ts(i)= out.dist;     
-    out.sigx_ts(i)= dp.sig_x; out.sigy_ts(i)= dp.sig_y;  out.sigz_ts(i)= dp.sig_z;
-    out.Ntot_ts(i)= out.N_tot; out.va_ts(i)= out.v_a; out.phi_ts(i)= out.phi; out.Np_ts(i)= out.N_p; 
-    out.Kl_ts(i)= abs(dpout.K_loss); out.depvel_ts(i)= out.dep_velo; 
-    out.cx_ts(i)= dpout.c_x; out.cy_ts(i)= dpout.c_y; out.cz_ts(i)= dpout.c_z; 
-    out.dcx_ts(i)= dpout.dc_x; out.dcy_ts(i)= dpout.dc_y; out.dcz_ts(i)= dpout.dc_z; 
-    out.Ctest_ts(i)= dpout.test_conc; % for testing
+    out.sigx_ts= [out.sigx_ts dp.sig_x]; out.sigy_ts= [out.sigy_ts dp.sig_y];  out.sigz_ts= [out.sigz_ts dp.sig_z];
+    out.Ntot_ts= [out.Ntot_ts out.N_tot]; out.va_ts= [out.va_ts out.v_a]; out.phi_ts= [out.phi_ts out.phi]; out.Np_ts= [out.Np_ts out.N_p]; 
+    out.Kl_ts= [out.Kl_ts abs(dpout.K_loss)]; out.depvel_ts= [out.depvel_ts out.dep_velo]; 
+    out.cx_ts= [out.cx_ts dpout.c_x]; out.cy_ts= [out.cy_ts dpout.c_y]; out.cz_ts= [out.cz_ts dpout.c_z]; 
+    out.dcx_ts= [out.dcx_ts dpout.dc_x]; out.dcy_ts= [out.dcy_ts dpout.dc_y]; out.dcz_ts= [out.dcz_ts dpout.dc_z]; 
+    out.Ctest_ts= [out.Ctest_ts dpout.test_conc]; % for testing
     
 % update consumed time (tc), local coordinates and distance from the source (dist):
+    out.tc= out.tc + out.dt;
     out.x= out.x + dx/plume.N_reso; out.y= out.y + dy/plume.N_reso; out.z= out.z + dz/plume.N_reso;   
     out.dist= sqrt((out.x - plume.x_0)^2 + (out.y - plume.y_0)^2 + (out.z - plume.z_0)^2);     
-    out.tc= out.tc + out.dt;
 end 
 % ** main loop ends here **
 
