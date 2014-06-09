@@ -57,22 +57,22 @@ grid on; axis tight;
 xlabel('Time (s)'); ylabel('Loss coefficient (/s)');
 
 figure(05); 
-subplot(2,3,1); plot(out.tc_ts, out.cx_ts, 'LineWidth',2);
+subplot(2,3,1); semilogy(out.tc_ts, out.cx_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s)'); ylabel('c_x');
-subplot(2,3,2); plot(out.tc_ts, out.cy_ts, 'LineWidth',2);
+subplot(2,3,2); semilogy(out.tc_ts, out.cy_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s)'); ylabel('c_y');
-subplot(2,3,3); plot(out.tc_ts, out.cz_ts, 'LineWidth',2);
+subplot(2,3,3); semilogy(out.tc_ts, out.cz_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s)'); ylabel('c_z');
-subplot(2,3,4); plot(out.tc_ts, out.dcx_ts, 'LineWidth',2);
+subplot(2,3,4); semilogy(out.tc_ts, out.dcx_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s)'); ylabel('dc_x/dt (/s)');
-subplot(2,3,5); plot(out.tc_ts, out.dcy_ts, 'LineWidth',2);
+subplot(2,3,5); semilogy(out.tc_ts, out.dcy_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s))'); ylabel('dc_y/dt (/s)');
-subplot(2,3,6); plot(out.tc_ts, out.dcz_ts, 'LineWidth',2);
+subplot(2,3,6); semilogy(out.tc_ts, out.dcz_ts, 'LineWidth',2);
 grid on;  axis tight;
 xlabel('Time (s)'); ylabel('dc_z/dt (/s)');
 

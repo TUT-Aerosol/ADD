@@ -32,21 +32,28 @@ dsig_x= din.dsig_x * in.U; dsig_y= din.dsig_y * in.U; dsig_z= din.dsig_z * in.U;
 % (K_i is the eddy diffusion coefficient, units m2/s)  
 K_x= dsig_x*din.sig_x; K_y= dsig_y*din.sig_y; K_z= dsig_z*din.sig_z;
 
-gamma= in.dep_velo/K_z; % [gamma] = 1/m
 
-% deposition rate (see below): 
+% prevent further dilution along z-axis if the plume has reached boundary layer height 
+if (din.sig_z> din.BLH && in.x > in.x_0)
+   din.sig_z= din.BLH; % cap sigma_z value
+   K_z= 0.5*in.U*(din.sig_z^2/(in.x - in.x_0)); % use this formulation when sigma is constant 
+end
+
+gamma= -in.dep_velo/K_z; % [gamma] = 1/m
+
+% deposition term (see below): 
 dpt1= gamma*exp(gamma*(in.z + 0.5*gamma*din.sig_z^2));
 dpt2= erfc((in.z + gamma*din.sig_z^2)/din.sig_z); 
-out.dep_rate= gamma*exp(gamma*(in.z + 0.5*gamma*din.sig_z^2))*erfc((in.z + gamma*din.sig_z^2)/din.sig_z); % (dep_rate = dpt1*dpt2)  
+out.dep_rate= dpt1*dpt2;
 
 % time derivative of the deposition rate: 
-d_dep_rate= dpt1*dsig_z*(dpt2*(gamma^2*din.sig_z*dsig_z) - (2./sqrt(pi))*exp(-(in.z + gamma*din.sig_z*din.sig_z)/din.sig_z)*(-in.z/din.sig_z^2 + gamma));
+d_dep_rate= dpt1*dsig_z*(dpt2*(gamma^2*din.sig_z*dsig_z) - (2./(sqrt(pi))*exp(-((in.z + gamma*din.sig_z^2)/din.sig_z)^2)*(-in.z/din.sig_z^2 + gamma)));
 
 % calculate concentration variables:  
 out.c_x= (1./(sqrt(2.0*pi)*din.sig_x))*exp(-((in.x - in.U*in.tc)^2)/(2.0*din.sig_x^2));
 out.c_y= (1./(sqrt(2.0*pi)*din.sig_y))*exp(-(in.y^2)/(2.0*din.sig_y^2));
-cz_apu1= (1./(sqrt(2.0*pi)*din.sig_z))*(2.0*exp(-(in.z^2)/(2.0*din.sig_z^2))); 
-out.c_z= (cz_apu1 - out.dep_rate);
+cz_apu1= 2.0*exp(-(in.z^2)/(2.0*din.sig_z^2)); 
+out.c_z= (1./(sqrt(2.0*pi)*din.sig_z))*(cz_apu1 + out.dep_rate);
 
 % analytical concentration:
 out.test_conc= out.c_x*out.c_y*out.c_z; 
@@ -54,7 +61,7 @@ out.test_conc= out.c_x*out.c_y*out.c_z;
 % calculate time derivatives of concentration variables:  
 out.dc_x= -(out.c_x/din.sig_x)*(dsig_x + dsig_x*(((in.x - in.U*in.tc)^2)/(din.sig_x^2)) + ((in.x - in.U*in.tc)*in.U)/din.sig_x); 
 out.dc_y= -(out.c_y/din.sig_y)*dsig_y*(1.0 + in.y^2/(din.sig_y^2));
-out.dc_z= -(cz_apu1/din.sig_z)*dsig_z*(1.0 + in.z^2/(din.sig_z^2)) - d_dep_rate;
+out.dc_z= (dsig_z/din.sig_z)*(-out.c_z - (in.z^2/(sqrt(2.0*pi)*din.sig_z^3))*cz_apu1) + d_dep_rate/(sqrt(2.0*pi)*din.sig_z); 
 
 % first order loss coefficient (/s): 
 out.K_loss= (out.dc_x/out.c_x + out.dc_y/out.c_y + out.dc_z/out.c_z);

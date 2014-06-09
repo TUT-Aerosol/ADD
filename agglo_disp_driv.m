@@ -26,6 +26,7 @@ function [out]= agglo_disp_driv(agglo, plume)
 % * T - temperature (K)
 % * d_limit - neglect dilution, deposition and agglomeration at smaller 
 %             distances than d_limit from the source (in m)
+% * BLH - boundary layer height (in m, optional) 
 % 
 % MAIN OUTPUT VARIABLES (contained in 'out' structure):
 % * Ntot_ts - time series of number concentration (/cm3) 
@@ -85,7 +86,9 @@ out.x= plume.x_0; out.y= plume.y_0; out.z= plume.z_0;  % initial coordinates
 out.dist= sqrt(out.x^2 + out.y^2 + out.z^2); % distance from the source
 out.U= plume.U; % wind velocity
 out.tc= 0.0; % set current time 
-out.disp_scheme_flag= true;
+out.disp_scheme_flag= true; out.BLH_flag= true; 
+
+out.x_0= 0;
 
 % ** main loop starts here **  
 for i= 1: plume.N_reso+1
@@ -104,7 +107,6 @@ for i= 1: plume.N_reso+1
             out.dep_velo= Rannik_depo(plume.T, out.d_a, agglo.rho, plume.U);
         otherwise 
             depo_scheme_flag= false;  % unknown deposition scheme
-            out.dep_velo= 0.0;
     end % end switch
 
     % calculate dispersion parameters: 
@@ -120,7 +122,19 @@ for i= 1: plume.N_reso+1
                 dp.dsig_x= 0.0; dp.dsig_y= 0.0; dp.dsig_z= 0.0;
     end % end switch
     
-    % calculate loss rate due to dispersion and deposition: 
+    % check if the boundary layer height is specified, 
+    % if so, cap the value of sigma_z to prevent further dispersion along z axis 
+    % when the plume has reached the inversion layer
+    if (~isfield(plume, 'BLH'))
+        out.BLH_flag= false; dp.BLH= 1e99;
+    else
+        dp.BLH= plume.BLH; dp.sig_z= min(dp.sig_z, plume.BLH);
+        if (out.x_0 == 0 && dp.sig_z == plume.BLH)
+            out.x_0= out.x;
+        end 
+    end   
+    
+    % calculate loss rate due to dispersion and deposition:
     if(dp.stab_flag == true && out.disp_scheme_flag == true && out.dist >= plume.d_limit) 
         dpout = plume_conc(out, dp);
     else
@@ -153,12 +167,16 @@ end
 % ** main loop ends here **
 
 if (out.disp_scheme_flag == false || dp.stab_flag == false)
-    disp('** Unknown scheme for dispersion parameters or unknown stability class - dispersion and deposition were neglected **'); 
-end 
-if (depo_scheme_flag== false) 
+    disp('*** Unknown scheme for dispersion parameters or unknown stability class - dispersion and deposition were neglected ***'); 
+end
+
+if (depo_scheme_flag== false)
     disp('*** Unknown deposition scheme - deposition was neglected ***');  
 end 
-    
+
+if (out.BLH_flag== false) 
+    disp('*** Boundary layer height neglected ***');  
+end
 % display output:
 ADD_output(out, dpout); 
 

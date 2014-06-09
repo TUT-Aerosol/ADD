@@ -1,5 +1,5 @@
 function [d_aero] = diam_conv(T, d_ve, khi, rho)
-% diam_conv(T, d_ve, khi, rho) - converts volume equivalent diameter to serodynamic diameter
+% diam_conv(T, d_ve, khi, rho) - converts volume equivalent diameter to aerodynamic diameter
 % INPUT: 
 % T - temperature (K)
 % d_ve - volume eqv. diameter (in nanometers, NOTE!) 
@@ -9,7 +9,7 @@ function [d_aero] = diam_conv(T, d_ve, khi, rho)
 % OUTPUT: 
 % d_aero (in nanometers)
 
-options= optimset('Display','off'); % supress outout from fsolve
+options= optimset('Display','off'); % supress output from fsolve
 amfp = (6.73d-8*T*(1.+110.4/T))/(296.*1.373);	% mean free path of air
 rho_e= rho/ 1.0;                                % effective density (rho is in g/cm3)
 cc = 1. + amfp/(d_ve)*(2.514 + 0.8*exp(-0.55*(2.*d_ve/amfp))); % Cunningham slip correction factor

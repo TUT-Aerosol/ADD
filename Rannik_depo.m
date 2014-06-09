@@ -1,6 +1,6 @@
 function [dep_veloc] = Rannik_depo(T, dp, dens, U)
 %	Semi-empirical deposition model presented by Rannik et al., JGR, 2003
-%	* Note:  valid in the diameter range 10 to around 500 nm 
+%	* Note:  valid in the diameter range from around 10 to 500 nm 
 %   * Note2: see the beginning of the code to see the values of fit
 %            parameters
 %
@@ -18,6 +18,13 @@ function [dep_veloc] = Rannik_depo(T, dp, dens, U)
 % "Interpretation of aerosol particle fluxes over a pine forest: Dry
 % deposition and random errors", 
 % J. Geophys. Res., 108, NO. D17, 4544, doi:10.1029/2003JD003542, 2003
+
+d_min= 10e-9; d_max= 500e-9; % in nm
+
+% if the diameter is <d_min (nm) , use the value @ d_min: 
+dp= max(d_min, dp); 
+% if the diameter is >d_max (nm), use the value @ d_max: 
+dp= min(d_max, dp); 
        
 % key fit parameters, based on the Hyytiälä measurements (see fig. 7 in the paper):
 dexponent = 2.5;		% (from Rannik et al., fig. 7; TRFE < 50%)
@@ -76,5 +83,6 @@ eps = sqrt(eps);
 r_c= wind_canopy/(fric_veloc^2*eps)*((1. + eps*tanh(gamma*eps))/(eps + tanh(gamma*eps)));
 %	 deposition velocity [m/s]
 dep_veloc = settling_veloc + 1./(r_a + r_c);	
+
 end
 
