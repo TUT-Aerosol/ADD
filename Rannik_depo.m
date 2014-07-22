@@ -1,4 +1,4 @@
-function [dep_veloc] = Rannik_depo(T, dp, dens, U)
+function [dep_veloc, settling_veloc] = Rannik_depo(T, dp, dens, U)
 %	Semi-empirical deposition model presented by Rannik et al., JGR, 2003
 %	* Note:  valid in the diameter range from around 10 to 500 nm 
 %   * Note2: see the beginning of the code to see the values of fit

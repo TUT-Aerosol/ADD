@@ -103,8 +103,8 @@ for i= 1: plume.N_reso+1
         case('rannik')
             % convert vol. eqv. to aerodynamic diameter: 
             out.d_a= 1e-9*diam_conv(plume.T, 1e9*out.d_ve, agglo.khi, agglo.rho); 
-            % calculate deposition rate (in m/s): 
-            out.dep_velo= Rannik_depo(plume.T, out.d_a, agglo.rho, plume.U);
+            % calculate deposition & settling velocities (in m/s): 
+            [out.dep_velo, out.set_velo]= Rannik_depo(plume.T, out.d_a, agglo.rho, plume.U);
         otherwise 
             depo_scheme_flag= false;  % unknown deposition scheme
     end % end switch

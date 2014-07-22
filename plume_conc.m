@@ -32,14 +32,13 @@ dsig_x= din.dsig_x * in.U; dsig_y= din.dsig_y * in.U; dsig_z= din.dsig_z * in.U;
 % (K_i is the eddy diffusion coefficient, units m2/s)  
 K_x= dsig_x*din.sig_x; K_y= dsig_y*din.sig_y; K_z= dsig_z*din.sig_z;
 
-
 % prevent further dilution along z-axis if the plume has reached boundary layer height 
 if (din.sig_z> din.BLH && in.x > in.x_0)
    din.sig_z= din.BLH; % cap sigma_z value
    K_z= 0.5*in.U*(din.sig_z^2/(in.x - in.x_0)); % use this formulation when sigma is constant 
 end
 
-gamma= -in.dep_velo/K_z; % [gamma] = 1/m
+gamma= -(in.dep_velo - in.set_velo)/K_z; % [gamma] = 1/m
 
 % deposition term (see below): 
 dpt1= gamma*exp(gamma*(in.z + 0.5*gamma*din.sig_z^2));

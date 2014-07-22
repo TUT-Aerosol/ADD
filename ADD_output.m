@@ -1,7 +1,7 @@
 function [] = ADD_output(out, dpout)
 %ADD_output.m - plots results for agglo_disp_driv 
 
-% choose scaling for the 1st plot: 
+% choose scaling for the 1st figure: 
 % axis_scaling= 'linear'; 
 axis_scaling= 'semilog';
 
@@ -16,7 +16,8 @@ switch(axis_scaling)
         grid on; axis tight; 
         xlabel('Time (s)'); ylabel('Total aerosol volume concentration (m^3/cm^3)');
         % title('Volume concentration');
-        subplot(1,3,3); plot(out.tc_ts, out.va_ts/out.v_a0,'LineWidth',2);
+%        subplot(1,3,3); plot(out.tc_ts, out.va_ts/out.v_a0,'LineWidth',2);
+        subplot(1,3,3); semilogx(out.tc_ts, out.va_ts/out.v_a0,'LineWidth',2);
         grid on; axis tight; 
         xlabel('Time (s)'); ylabel('Relative particle volume (V/V_0)');
         % title('Relative particle volume');
