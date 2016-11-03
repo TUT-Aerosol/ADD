@@ -71,6 +71,7 @@ out.dcx_ts= zeros(1,plume.N_reso+1); out.dcy_ts= zeros(1,plume.N_reso+1);out.dcz
 out.Ctest_ts= zeros(1,plume.N_reso+1);  % for testing purposes
 
 % calculate the alfa constant (eq. 4 in Lehtinen et al., JCI, 1996): 
+% TODO: MOVE THIS TO agglom.m
 alfa = 6.548 + 112.1*(agglo.D_f^(-7.883));
 
 % set initial values
@@ -163,6 +164,10 @@ for i= 1: plume.N_reso+1
     out.x= out.x + dx/plume.N_reso; out.y= out.y + dy/plume.N_reso; out.z= out.z + dz/plume.N_reso;   
     out.dist= sqrt((out.x - plume.x_0)^2 + (out.y - plume.y_0)^2 + (out.z - plume.z_0)^2);     
     out.tc= out.tc + out.dt;
+
+    if (out.N_tot < plume.Ntot_limit)
+        break
+    end
 end 
 % ** main loop ends here **
 

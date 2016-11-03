@@ -38,27 +38,30 @@ SAVE=1; %Data saving to files, 1=On, 0=Off.
 Filename='140724_IniParam'; %Filename for the initial parameters
 
 %Parameters initialization values
-m           = [1];                         %Initial material mass (kg)
-dp          = [6]*1e-9;               %Initial particle size (m)
-d_limit     = [100];                           %Initial ploom size(m)
-rho         = 1.6*1e3;                        %Material density(kg/m^3)
-d_f         = 3;                          %Fractal dimensionality for agglomerate
+m           = [1];                          %Initial material mass (kg)
+dp          = [6]*1e-9;                     %Initial particle size (m)
+d_limit     = [100];                        %Initial ploom size(m)
+rho         = 1.6*1e3;                      %Material density(kg/m^3)
+d_f         = 3;                            %Fractal dimensionality for agglomerate
 khi         = 1;                            %Dynamic shape factor
 
 % U and stab_class are paired with each other and should be have the same
 % length n which produces n number of initial conditions, not n*n.
-U           = [10];                       %Wind speed (m/s) 
-stab_class  = ['b'];                    %Stability class;   A:very unstable,B:unstable,C:slightly unstable,
+U           = [10];                         %Wind speed (m/s) 
+stab_class  = ['b'];                        %Stability class;   A:very unstable,B:unstable,C:slightly unstable,
                                             %               D:neutral,E:slightly stable,F:stable
                                             
 Nl          = 91;                           %Number of simulation lines; see SimQuad.m for additional info
 Dl          = 20000;                        %Maximum simulation distance (m); see SimQuad.m for additional info
 [X,Y]       = SimQuad(Dl,Nl);               %Endpoints for simulation lines
-Sim_N       = 50;                            %Number of lines simulated away from the wind direction
+Sim_N       = 50;                           %Number of lines simulated away from the wind direction: 
+                                            %   read how many of the N1- lines are actually simulated  
 
 agglo.khi   = khi;                          %Particle shape factor
-plume.N_reso= 1000;                       %Number of steps per simulation; determines the step size with Dl
-plume.disp_scheme = 'klug';                 %Dispresion scheme
+plume.N_reso= 1000;                         %Number of steps per simulation; determines the step size with Dl and U
+plume.disp_scheme = 'klug';                 %Dispersion scheme
+plume.Ntot_limit = 1;                       %If the simulated total concentration N_tot (1/cm3) is lower than this limit, 
+                                            %       the simulation is stopped to save simulation time
 steps = plume.N_reso + 1;                   %Length of result vector needed for plotting
 
 % Initializing the input structs for all possible combinations of input
@@ -133,6 +136,8 @@ toc
 %% Distance to certain concentration
 % For map overlay
 % Remember to load the data from where to draw the pictures !!!!!!!!
+file = [Filename '_' num2str(ipart) '_Results.mat'];
+load(file)
 
 Contour_count=Variable_count/Sim_N; %Number of plume contours
 Lines=4; %Number of contourlines
@@ -245,7 +250,7 @@ plot(GroundZero(1)+[0 0],GroundZero(2)+[0 D],':')
 plot(GroundZero(1)+[0 0],GroundZero(2)+[-D 0],':')
 
 for i=2:2:2*Rings, %Distance rings around the ground zero
-    Sphere(GroundZero(1),GroundZero(2),i*1000*Metre)
+    Circle(GroundZero(1),GroundZero(2),i*1000*Metre);
     text(GroundZero(1)-i*1000*Metre,GroundZero(2),[num2str(i/2) 'km'],'FontSize',15);
 end
 text(GroundZero(1),GroundZero(2),' \leftarrow Wind','FontSize',18); %Distance labels
