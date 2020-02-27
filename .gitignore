@@ -2,3 +2,14 @@
 **/.DS_Store
 *.mat
 **/*.mat
+**/*.fig
+**/*.jpg
+**/*.asv
+!Kartta.JPG
+**/*.png
+*.eps
+*.pdf
+/matlab2tikz
+/HEINO
+/dippaFigures
+/CompareAnalalyticToIterative
