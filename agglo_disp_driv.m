@@ -7,6 +7,9 @@ function [out]= agglo_disp_driv(agglo, plume)
 %                   aligned so that the x coordinate corresponds to wind
 %                   direction.
 %
+% Coded by Tatu Anttila, 2014
+%   -additions and corrections: Mikko Poikkimäki 6.11.2016
+%
 % INPUT (contained in 'agglo' structure): 
 % * N_0 - initial number concentration of primary particles(/cm3)
 % * d_0 - diameter of the primary particles composing the agglomerates (m)
@@ -54,8 +57,11 @@ function [out]= agglo_disp_driv(agglo, plume)
 dx= (plume.x_1 - plume.x_0); dy= (plume.y_1 - plume.y_0); dz= (plume.z_1 - plume.z_0); 
 % total distance traversed
 dist_tot= sqrt(dx^2 + dy^2 + dz^2); 
-% time step (note: time step should be less than a second at the very least) 
-out.dt= dist_tot/(plume.U*plume.N_reso); 
+% time step (note: time step should be less than a second at the very
+% least). Now resolution calculated by the preset timestep
+out.dt = plume.dt;
+plume.N_reso = round(dist_tot/(plume.U*out.dt)); %out.dt= dist_tot/(plume.U*plume.N_reso); 
+out.N_reso = plume.N_reso;
 
 % Boltzmann's constant
 k= 1.3806488e-23;
@@ -69,6 +75,10 @@ out.Kl_ts=zeros(1,plume.N_reso+1); out.depvel_ts= zeros(1,plume.N_reso+1);
 out.cx_ts= zeros(1,plume.N_reso+1); out.cy_ts= zeros(1,plume.N_reso+1);out.cz_ts= zeros(1,plume.N_reso+1); 
 out.dcx_ts= zeros(1,plume.N_reso+1); out.dcy_ts= zeros(1,plume.N_reso+1);out.dcz_ts= zeros(1,plume.N_reso+1);
 out.Ctest_ts= zeros(1,plume.N_reso+1);  % for testing purposes
+out.normalization_ts = zeros(1,plume.N_reso+1); out.N_depEnv_ts = zeros(1,plume.N_reso+1);
+out.M_depEnv_ts = zeros(1,plume.N_reso+1); out.N_Env_ts = zeros(1,plume.N_reso+1); out.M_Env_ts = zeros(1,plume.N_reso+1);
+out.N_respDep_ts = zeros(1,plume.N_reso+1); out.M_respDep_ts = zeros(1,plume.N_reso+1); out.d_ve_ts = zeros(1,plume.N_reso+1);
+%out.N_corr_ts{plume.N_reso+1} = [];
 
 % calculate the alfa constant (eq. 4 in Lehtinen et al., JCI, 1996): 
 % TODO: MOVE THIS TO agglom.m
@@ -93,10 +103,12 @@ out.x_0= 0;
 
 % ** main loop starts here **  
 for i= 1: plume.N_reso+1
+    %disp(['Before ' num2str(out.N_tot)])
     % agglomeration: 
     if out.dist >= plume.d_limit
         out = agglom(out, agglo, plume, alfa, k, out.dt); 
     end
+    %disp(['After ' num2str(out.N_tot)])
     
     % deposition:
     depo_scheme_flag= true;
@@ -105,7 +117,7 @@ for i= 1: plume.N_reso+1
             % convert vol. eqv. to aerodynamic diameter: 
             out.d_a= 1e-9*diam_conv(plume.T, 1e9*out.d_ve, agglo.khi, agglo.rho); 
             % calculate deposition & settling velocities (in m/s): 
-            [out.dep_velo, out.set_velo]= Rannik_depo(plume.T, out.d_a, agglo.rho, plume.U);
+            [out.dep_velo, out.set_velo]= Rannik_depo(plume.T, out.d_a, agglo.rho*10e3, plume.U);
         otherwise 
             depo_scheme_flag= false;  % unknown deposition scheme
     end % end switch
@@ -137,11 +149,14 @@ for i= 1: plume.N_reso+1
     
     % calculate loss rate due to dispersion and deposition:
     if(dp.stab_flag == true && out.disp_scheme_flag == true && out.dist >= plume.d_limit) 
-        dpout = plume_conc(out, dp);
+        dpout = plume_conc(out, dp, 1);
     else
         dpout.K_loss= 0.0; dpout.c_x= 0.0; dpout.c_y= 0.0; dpout.c_z= 0.0; 
         dpout.dc_x= 0.0; dpout.dc_y= 0.0; dpout.dc_z= 0.0; dpout.test_conc= 0.0;
-    end % endif
+        if(out.dist <= plume.d_limit) 
+            dpout.test_conc= 1.0;
+        end
+    end % end
        
     % update volume and number concentration due to dispersion and deposition(Euler method):
     % out.N_tot= out.N_tot + out.N_tot*dpout.K_loss*out.dt;
@@ -150,22 +165,52 @@ for i= 1: plume.N_reso+1
     % update volume and number concentration due to dispersion and deposition(implicit Euler method):
     out.N_tot= out.N_tot/(1.0 - dpout.K_loss*out.dt);
     out.phi= out.phi/(1.0 - dpout.K_loss*out.dt);
-   
+    
+    %%% Respiratory and environmental deposition:
+    % choose in which points (x,y,z) on the trajectory environmental and respiratory deposition are calculated
+    percent = logspace(-2,2,50); % percent of the total distance [0.1, 1, 5, 10, 15, 20, 25, 50, 75, 100]; 
+    out.index = round(plume.N_reso.*percent./100)+1;
+    % go through all the chosen points and see if one of them is reached
+    depo_calc_flag = false;
+    for j = 1:length(out.index)
+        if (i == out.index(j))
+            depo_calc_flag = true;
+        end
+    end
+    % calculate deposited amount of material if at the chosen point
+    out.longer = 500; % simulate more steps in time for these observation points % TODO: move this to depositedAmount.m- function
+    if (depo_calc_flag == true)
+        out = depositedAmount(out, dp, agglo, plume, i, dx, dy, dz);
+        %disp(['*** Deposition calculated at distance ' num2str(out.dist) ' m. ***'])
+    else
+        out.normalization = 0.0; out.N_corr = []; out.N_depEnv = 0.0;
+        out.M_depEnv = 0.0; out.N_Env = 0.0; out.M_Env = 0.0; out.N_respDep = 0.0;
+        out.M_respDep = 0.0;
+    end
+    %%%
+    
 % update time series of output variables: 
     out.x_ts(i)= out.x; out.y_ts(i)= out.y;  out.z_ts(i)= out.z;  out.tc_ts(i)= out.tc; out.dist_ts(i)= out.dist;     
     out.sigx_ts(i)= dp.sig_x; out.sigy_ts(i)= dp.sig_y;  out.sigz_ts(i)= dp.sig_z;
     out.Ntot_ts(i)= out.N_tot; out.va_ts(i)= out.v_a; out.phi_ts(i)= out.phi; out.Np_ts(i)= out.N_p; 
     out.Kl_ts(i)= abs(dpout.K_loss); out.depvel_ts(i)= out.dep_velo; 
     out.cx_ts(i)= dpout.c_x; out.cy_ts(i)= dpout.c_y; out.cz_ts(i)= dpout.c_z; 
-    out.dcx_ts(i)= dpout.dc_x; out.dcy_ts(i)= dpout.dc_y; out.dcz_ts(i)= dpout.dc_z; 
+    out.dcx_ts(i)= dpout.dc_x; out.dcy_ts(i)= dpout.dc_y; out.dcz_ts(i)= dpout.dc_z; out.BLH = dp.BLH;
     out.Ctest_ts(i)= dpout.test_conc; % for testing
+    
+    out.normalization_ts(i) = out.normalization; out.N_depEnv_ts(i) = out.N_depEnv;
+    out.M_depEnv_ts(i) = out.M_depEnv; out.N_Env_ts(i) = out.N_Env; out.M_Env_ts(i) = out.M_Env; out.N_respDep_ts(i) = out.N_respDep;
+    out.M_respDep_ts(i) = out.M_respDep; out.d_ve_ts(i) = out.d_ve;
+    %out.N_corr_ts{i} = out.N_corr;
     
 % update consumed time (tc), local coordinates and distance from the source (dist):
     out.x= out.x + dx/plume.N_reso; out.y= out.y + dy/plume.N_reso; out.z= out.z + dz/plume.N_reso;   
     out.dist= sqrt((out.x - plume.x_0)^2 + (out.y - plume.y_0)^2 + (out.z - plume.z_0)^2);     
     out.tc= out.tc + out.dt;
 
-    if (out.N_tot < plume.Ntot_limit)
+% stop the simulation if number concentration is below limit value Ntot_limit (#/cm3) to save simulation time
+% simulate still until 2km
+    if (out.N_tot < plume.Ntot_limit && out.dist >= 2000)
         break
     end
 end 
@@ -183,7 +228,7 @@ if (out.BLH_flag== false)
     disp('*** Boundary layer height neglected ***');  
 end
 % display output:
-ADD_output(out, dpout); 
+% ADD_output(out, dpout); 
 
 end
     

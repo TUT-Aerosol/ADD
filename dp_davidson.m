@@ -38,12 +38,12 @@ switch lower(stab_class)
         disp('** Unknown stability class **'); 
 end
 
-if (out.stab_flag == true && xx>0)
-    out.sig_z= z(1)*(xx^(z(2)+z(3)*log(xx))); % sig is in m
-    out.sig_y= y(1)*(xx^(y(2)+y(3)*log(xx))); 
+if (out.stab_flag == true && all(xx>0))
+    out.sig_z= z(1).*(xx.^(z(2)+z(3).*log(xx))); % sig is in m
+    out.sig_y= y(1).*(xx.^(y(2)+y(3).*log(xx))); 
     out.sig_x= out.sig_y; 
-    out.dsig_z= (z(2)+2.*z(3))*out.sig_z/x; % dsig is in m / m 
-    out.dsig_y= (y(2)+2.*y(3))*out.sig_y/x; 
+    out.dsig_z= (z(2)+2.*z(3)).*out.sig_z./x; % dsig is in m / m 
+    out.dsig_y= (y(2)+2.*y(3)).*out.sig_y./x; 
     out.dsig_x= out.dsig_y;
 else
     out.sig_z= 0; out.sig_y= 0; out.sig_x= 0;

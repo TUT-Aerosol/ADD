@@ -1,4 +1,4 @@
-function [out] = plume_conc(in, din)
+function [out] = plume_conc(in, din, depo_flag)
 % plume_conc (in, din) - Gaussian "puff" model, including deposition. 
 % Source is assumed to be at the ground level, and gravitational settling
 % is neglected. 
@@ -16,6 +16,8 @@ function [out] = plume_conc(in, din)
 % * sig_i (i= x,y,z) - dispersion parameters (in m) 
 % * dsig_i (i= x, y, z) - derivates of dispersion parameters 
 %                         with respect to x (m/m)
+% INPUT
+% * depo_flag - Take into account deposition in calculation. 0=no depos, 1=deposition
 %
 % OUTPUT (contained in the stucture 'out'): 
 % * C - concentration at (x,y,z,t), 
@@ -24,6 +26,13 @@ function [out] = plume_conc(in, din)
 % * dc_i (i= x,y,z) - time derivatives of c_i 
 % * K_loss - first order loss coefficient due to dilution + deposition 
 %            (in /s, see below)
+
+% Take into account deposition in calculation. 0=no depos, 1=deposition
+if depo_flag == 0
+    in.dep_velo = 0;
+    in.set_velo = 0;
+    in.tc = in.time_disp;
+end
 
 % convert dsig_i to derivatives with respect to time (in m/m -> m/s):
 dsig_x= din.dsig_x * in.U; dsig_y= din.dsig_y * in.U; dsig_z= din.dsig_z * in.U;
@@ -38,7 +47,7 @@ if (din.sig_z> din.BLH && in.x > in.x_0)
    K_z= 0.5*in.U*(din.sig_z^2/(in.x - in.x_0)); % use this formulation when sigma is constant 
 end
 
-gamma= -(in.dep_velo - in.set_velo)/K_z; % [gamma] = 1/m
+gamma= -(in.dep_velo)/K_z; % [gamma] = 1/m % - in.set_velo
 
 % deposition term (see below): 
 dpt1= gamma*exp(gamma*(in.z + 0.5*gamma*din.sig_z^2));
@@ -64,6 +73,11 @@ out.dc_z= (dsig_z/din.sig_z)*(-out.c_z - (in.z^2/(sqrt(2.0*pi)*din.sig_z^3))*cz_
 
 % first order loss coefficient (/s): 
 out.K_loss= (out.dc_x/out.c_x + out.dc_y/out.c_y + out.dc_z/out.c_z);
+% Make sure not to produce NaNs if divided by zero incase that dispersion
+% parameters are too small during small distance from the source
+if isnan(out.K_loss)
+    out.K_loss = 0.0;
+end
 
 end
 

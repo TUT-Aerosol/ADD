@@ -37,12 +37,12 @@ switch lower(stab_class)
 %        disp('** Unknown stability class **') 
 end
 
-if (out.stab_flag == true && x > 0)
-    out.sig_z= z(1)*(x^z(2));
-    out.sig_y= y(1)*(x^y(2));
+if (out.stab_flag == true && all(x > 0))
+    out.sig_z= z(1).*(x.^z(2));
+    out.sig_y= y(1).*(x.^y(2));
     out.sig_x= out.sig_y; 
-    out.dsig_z= z(2)*out.sig_z/x; 
-    out.dsig_y= y(2)*out.sig_y/x;
+    out.dsig_z= z(2).*out.sig_z./x; 
+    out.dsig_y= y(2).*out.sig_y./x;
     out.dsig_x= out.dsig_y;
 else
     out.stab_flag= false; 

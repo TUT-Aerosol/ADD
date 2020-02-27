@@ -6,5 +6,5 @@ t=-pi:0.001:pi;
 x=r*cos(t)+centerX;
 y=r*sin(t)+centerY;
 
-plot(x,y)
+plot(x,y,'k:')
 end
